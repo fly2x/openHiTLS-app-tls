@@ -241,3 +241,260 @@ EXIT:
     return;
 }
 /* END_CASE */
+
+/**
+ * For test parse SignedData of wrong conditions.
+*/
+/* BEGIN_CASE */
+void SDV_CMS_PARSE_SIGNEDDATA_TC001()
+{
+    HITLS_CMS_SignedData signedData = {0};
+    BSL_Buffer encode = {0};
+    
+    int32_t ret = HITLS_CMS_ParseSignedData(NULL, &signedData);
+    ASSERT_EQ(ret, HITLS_CMS_ERR_NULL_POINTER);
+    
+    ret = HITLS_CMS_ParseSignedData(&encode, NULL);
+    ASSERT_EQ(ret, HITLS_CMS_ERR_NULL_POINTER);
+    
+EXIT:
+    HITLS_CMS_FreeSignedData(&signedData);
+    return;
+}
+/* END_CASE */
+
+/**
+ * For test encode SignedData of wrong conditions.
+*/
+/* BEGIN_CASE */
+void SDV_CMS_ENCODE_SIGNEDDATA_TC001()
+{
+    HITLS_CMS_SignedData signedData = {0};
+    BSL_Buffer encode = {0};
+    
+    int32_t ret = HITLS_CMS_EncodeSignedData(NULL, &encode);
+    ASSERT_EQ(ret, HITLS_CMS_ERR_NULL_POINTER);
+    
+    ret = HITLS_CMS_EncodeSignedData(&signedData, NULL);
+    ASSERT_EQ(ret, HITLS_CMS_ERR_NULL_POINTER);
+    
+    encode.data = (uint8_t *)"test";
+    ret = HITLS_CMS_EncodeSignedData(&signedData, &encode);
+    ASSERT_EQ(ret, HITLS_CMS_ERR_NULL_POINTER);
+    
+EXIT:
+    encode.data = NULL;
+    BSL_SAL_FREE(encode.data);
+    HITLS_CMS_FreeSignedData(&signedData);
+    return;
+}
+/* END_CASE */
+
+/**
+ * For test encode and parse SignedData round trip.
+*/
+/* BEGIN_CASE */
+void SDV_CMS_SIGNEDDATA_ROUNDTRIP_TC001()
+{
+    HITLS_CMS_SignedData originalData = {0};
+    HITLS_CMS_SignedData parsedData = {0};
+    BSL_Buffer encode = {0};
+    
+    originalData.version = 1;
+    
+    uint8_t digestAlgs[] = {0x31, 0x00};
+    originalData.digestAlgorithms.data = BSL_SAL_Dump(digestAlgs, sizeof(digestAlgs));
+    originalData.digestAlgorithms.dataLen = sizeof(digestAlgs);
+    ASSERT_NE(originalData.digestAlgorithms.data, NULL);
+    
+    uint8_t signerInfos[] = {0x31, 0x00};
+    originalData.signerInfos.data = BSL_SAL_Dump(signerInfos, sizeof(signerInfos));
+    originalData.signerInfos.dataLen = sizeof(signerInfos);
+    ASSERT_NE(originalData.signerInfos.data, NULL);
+    
+    int32_t ret = HITLS_CMS_EncodeSignedData(&originalData, &encode);
+    ASSERT_EQ(ret, HITLS_PKI_SUCCESS);
+    ASSERT_NE(encode.data, NULL);
+    ASSERT_GT(encode.dataLen, 0);
+    
+    ret = HITLS_CMS_ParseSignedData(&encode, &parsedData);
+    ASSERT_EQ(ret, HITLS_PKI_SUCCESS);
+    ASSERT_EQ(parsedData.version, originalData.version);
+    
+EXIT:
+    BSL_SAL_FREE(encode.data);
+    HITLS_CMS_FreeSignedData(&originalData);
+    HITLS_CMS_FreeSignedData(&parsedData);
+    return;
+}
+/* END_CASE */
+
+/**
+ * For test parse EnvelopedData of wrong conditions.
+*/
+/* BEGIN_CASE */
+void SDV_CMS_PARSE_ENVELOPEDDATA_TC001()
+{
+    HITLS_CMS_EnvelopedData envelopedData = {0};
+    BSL_Buffer encode = {0};
+    
+    int32_t ret = HITLS_CMS_ParseEnvelopedData(NULL, &envelopedData);
+    ASSERT_EQ(ret, HITLS_CMS_ERR_NULL_POINTER);
+    
+    ret = HITLS_CMS_ParseEnvelopedData(&encode, NULL);
+    ASSERT_EQ(ret, HITLS_CMS_ERR_NULL_POINTER);
+    
+EXIT:
+    HITLS_CMS_FreeEnvelopedData(&envelopedData);
+    return;
+}
+/* END_CASE */
+
+/**
+ * For test encode EnvelopedData of wrong conditions.
+*/
+/* BEGIN_CASE */
+void SDV_CMS_ENCODE_ENVELOPEDDATA_TC001()
+{
+    HITLS_CMS_EnvelopedData envelopedData = {0};
+    BSL_Buffer encode = {0};
+    
+    int32_t ret = HITLS_CMS_EncodeEnvelopedData(NULL, &encode);
+    ASSERT_EQ(ret, HITLS_CMS_ERR_NULL_POINTER);
+    
+    ret = HITLS_CMS_EncodeEnvelopedData(&envelopedData, NULL);
+    ASSERT_EQ(ret, HITLS_CMS_ERR_NULL_POINTER);
+    
+    encode.data = (uint8_t *)"test";
+    ret = HITLS_CMS_EncodeEnvelopedData(&envelopedData, &encode);
+    ASSERT_EQ(ret, HITLS_CMS_ERR_NULL_POINTER);
+    
+    encode.data = NULL;
+    envelopedData.contentEncryptionAlg = BSL_CID_UNKNOWN;
+    ret = HITLS_CMS_EncodeEnvelopedData(&envelopedData, &encode);
+    ASSERT_EQ(ret, HITLS_CMS_ERR_INVALID_ALGO);
+    
+EXIT:
+    encode.data = NULL;
+    BSL_SAL_FREE(encode.data);
+    HITLS_CMS_FreeEnvelopedData(&envelopedData);
+    return;
+}
+/* END_CASE */
+
+/**
+ * For test encode and parse EnvelopedData round trip.
+*/
+/* BEGIN_CASE */
+void SDV_CMS_ENVELOPEDDATA_ROUNDTRIP_TC001()
+{
+    HITLS_CMS_EnvelopedData originalData = {0};
+    HITLS_CMS_EnvelopedData parsedData = {0};
+    BSL_Buffer encode = {0};
+    
+    originalData.version = 2;
+    originalData.contentEncryptionAlg = BSL_CID_AES256_CBC;
+    
+    uint8_t recipientInfos[] = {0x31, 0x00};
+    originalData.recipientInfos.data = BSL_SAL_Dump(recipientInfos, sizeof(recipientInfos));
+    originalData.recipientInfos.dataLen = sizeof(recipientInfos);
+    ASSERT_NE(originalData.recipientInfos.data, NULL);
+    
+    uint8_t encryptedContent[] = {0x01, 0x02, 0x03, 0x04};
+    originalData.encryptedContent.data = BSL_SAL_Dump(encryptedContent, sizeof(encryptedContent));
+    originalData.encryptedContent.dataLen = sizeof(encryptedContent);
+    ASSERT_NE(originalData.encryptedContent.data, NULL);
+    
+    int32_t ret = HITLS_CMS_EncodeEnvelopedData(&originalData, &encode);
+    ASSERT_EQ(ret, HITLS_PKI_SUCCESS);
+    ASSERT_NE(encode.data, NULL);
+    ASSERT_GT(encode.dataLen, 0);
+    
+    ret = HITLS_CMS_ParseEnvelopedData(&encode, &parsedData);
+    ASSERT_EQ(ret, HITLS_PKI_SUCCESS);
+    ASSERT_EQ(parsedData.version, originalData.version);
+    ASSERT_EQ(parsedData.contentEncryptionAlg, originalData.contentEncryptionAlg);
+    
+EXIT:
+    BSL_SAL_FREE(encode.data);
+    HITLS_CMS_FreeEnvelopedData(&originalData);
+    HITLS_CMS_FreeEnvelopedData(&parsedData);
+    return;
+}
+/* END_CASE */
+
+/**
+ * For test SignedData free function.
+*/
+/* BEGIN_CASE */
+void SDV_CMS_FREE_SIGNEDDATA_TC001()
+{
+    HITLS_CMS_SignedData signedData = {0};
+    
+    uint8_t testData[] = {0x01, 0x02, 0x03};
+    signedData.digestAlgorithms.data = BSL_SAL_Dump(testData, sizeof(testData));
+    signedData.digestAlgorithms.dataLen = sizeof(testData);
+    signedData.contentType.data = BSL_SAL_Dump(testData, sizeof(testData));
+    signedData.contentType.dataLen = sizeof(testData);
+    signedData.content.data = BSL_SAL_Dump(testData, sizeof(testData));
+    signedData.content.dataLen = sizeof(testData);
+    signedData.signerInfos.data = BSL_SAL_Dump(testData, sizeof(testData));
+    signedData.signerInfos.dataLen = sizeof(testData);
+    
+    HITLS_CMS_FreeSignedData(&signedData);
+    
+    ASSERT_EQ(signedData.digestAlgorithms.data, NULL);
+    ASSERT_EQ(signedData.digestAlgorithms.dataLen, 0);
+    ASSERT_EQ(signedData.contentType.data, NULL);
+    ASSERT_EQ(signedData.contentType.dataLen, 0);
+    ASSERT_EQ(signedData.content.data, NULL);
+    ASSERT_EQ(signedData.content.dataLen, 0);
+    ASSERT_EQ(signedData.signerInfos.data, NULL);
+    ASSERT_EQ(signedData.signerInfos.dataLen, 0);
+    
+    HITLS_CMS_FreeSignedData(NULL);
+    
+EXIT:
+    return;
+}
+/* END_CASE */
+
+/**
+ * For test EnvelopedData free function.
+*/
+/* BEGIN_CASE */
+void SDV_CMS_FREE_ENVELOPEDDATA_TC001()
+{
+    HITLS_CMS_EnvelopedData envelopedData = {0};
+    
+    uint8_t testData[] = {0x01, 0x02, 0x03};
+    envelopedData.originatorInfo.data = BSL_SAL_Dump(testData, sizeof(testData));
+    envelopedData.originatorInfo.dataLen = sizeof(testData);
+    envelopedData.recipientInfos.data = BSL_SAL_Dump(testData, sizeof(testData));
+    envelopedData.recipientInfos.dataLen = sizeof(testData);
+    envelopedData.contentType.data = BSL_SAL_Dump(testData, sizeof(testData));
+    envelopedData.contentType.dataLen = sizeof(testData);
+    envelopedData.contentEncryptionParams.data = BSL_SAL_Dump(testData, sizeof(testData));
+    envelopedData.contentEncryptionParams.dataLen = sizeof(testData);
+    envelopedData.encryptedContent.data = BSL_SAL_Dump(testData, sizeof(testData));
+    envelopedData.encryptedContent.dataLen = sizeof(testData);
+    
+    HITLS_CMS_FreeEnvelopedData(&envelopedData);
+    
+    ASSERT_EQ(envelopedData.originatorInfo.data, NULL);
+    ASSERT_EQ(envelopedData.originatorInfo.dataLen, 0);
+    ASSERT_EQ(envelopedData.recipientInfos.data, NULL);
+    ASSERT_EQ(envelopedData.recipientInfos.dataLen, 0);
+    ASSERT_EQ(envelopedData.contentType.data, NULL);
+    ASSERT_EQ(envelopedData.contentType.dataLen, 0);
+    ASSERT_EQ(envelopedData.contentEncryptionParams.data, NULL);
+    ASSERT_EQ(envelopedData.contentEncryptionParams.dataLen, 0);
+    ASSERT_EQ(envelopedData.encryptedContent.data, NULL);
+    ASSERT_EQ(envelopedData.encryptedContent.dataLen, 0);
+    
+    HITLS_CMS_FreeEnvelopedData(NULL);
+    
+EXIT:
+    return;
+}
+/* END_CASE */
