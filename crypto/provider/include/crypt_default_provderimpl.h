@@ -123,6 +123,12 @@ extern const CRYPT_EAL_Func g_defEalSubPubKeyWithoutSeqDer2Ed25519Key[];
 extern const CRYPT_EAL_Func g_defEalLowKeyObject2PkeyObject[];
 extern const CRYPT_EAL_Func g_defEalRsaPubDer2Key[];
 
+/* Encoder functions */
+extern const CRYPT_EAL_Func g_defEalRsaKey2Der[];
+extern const CRYPT_EAL_Func g_defEalEccKey2Der[];
+extern const CRYPT_EAL_Func g_defEalKey2Der[];
+extern const CRYPT_EAL_Func g_defEalDer2Pem[];
+
 #ifdef __cplusplus
 }
 #endif // __cplusplus

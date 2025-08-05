@@ -78,7 +78,8 @@ typedef void (*CRYPT_EAL_ProvFreeCb)(void *provCtx);
 #define CRYPT_EAL_OPERAID_KDF         9
 #define CRYPT_EAL_OPERAID_RAND        10
 #define CRYPT_EAL_OPERAID_DECODER     11
-#define CRYPT_EAL_OPERAID_SELFTEST    12
+#define CRYPT_EAL_OPERAID_ENCODER     12
+#define CRYPT_EAL_OPERAID_SELFTEST    13
 
 typedef int32_t (*CRYPT_EAL_ProvQueryCb)(void *provCtx, int32_t operaId, CRYPT_EAL_AlgInfo **algInfos);
 /* Used for obtaining provider information through the eal layer interface */
@@ -296,6 +297,21 @@ typedef int32_t (*CRYPT_DECODER_IMPL_GetParam)(void *ctx, BSL_Param *param);
 typedef int32_t (*CRYPT_DECODER_IMPL_Decode)(void *ctx, const BSL_Param *inParam, BSL_Param **outParam);
 typedef void (*CRYPT_DECODER_IMPL_FreeOutData)(void *ctx, BSL_Param *outData);
 typedef void (*CRYPT_DECODER_IMPL_FreeCtx)(void *ctx);
+
+// CRYPT_EAL_OPERAID_ENCODER
+#define CRYPT_ENCODER_IMPL_NEWCTX           1
+#define CRYPT_ENCODER_IMPL_SETPARAM         2
+#define CRYPT_ENCODER_IMPL_GETPARAM         3
+#define CRYPT_ENCODER_IMPL_ENCODE           4
+#define CRYPT_ENCODER_IMPL_FREEOUTDATA      5
+#define CRYPT_ENCODER_IMPL_FREECTX          6
+
+typedef void *(*CRYPT_ENCODER_IMPL_NewCtx)(void *provCtx);
+typedef int32_t (*CRYPT_ENCODER_IMPL_SetParam)(void *ctx, const BSL_Param *param);
+typedef int32_t (*CRYPT_ENCODER_IMPL_GetParam)(void *ctx, BSL_Param *param);
+typedef int32_t (*CRYPT_ENCODER_IMPL_Encode)(void *ctx, const BSL_Param *inParam, BSL_Param **outParam);
+typedef void (*CRYPT_ENCODER_IMPL_FreeOutData)(void *ctx, BSL_Param *outData);
+typedef void (*CRYPT_ENCODER_IMPL_FreeCtx)(void *ctx);
 
 // CRYPT_EAL_OPERAID_SELFTEST
 #define CRYPT_EAL_IMPLSELFTEST_NEWCTX           1

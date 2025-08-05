@@ -36,6 +36,8 @@ extern "C" {
 
 typedef struct CRYPT_DecoderCtx CRYPT_DECODER_Ctx;
 
+typedef struct CRYPT_EncoderCtx CRYPT_ENCODER_Ctx;
+
 /**
  * @brief Create a decoder context for the specified format and type
  * 
@@ -90,7 +92,63 @@ int32_t CRYPT_DECODE_Decode(CRYPT_DECODER_Ctx *ctx, const BSL_Param *inParam, BS
  */
 void CRYPT_DECODE_FreeOutData(CRYPT_DECODER_Ctx *ctx, BSL_Param *outData);
 
+/**
+ * @brief Create an encoder context for the specified format and type
+ * 
+ * @param libCtx EAL library context
+ * @param keyType Encoding target type (e.g., CRYPT_ALG_ID_RSA, CRYPT_ALG_ID_EC)
+ * @param attrName Attribute name for specific type encoding (can be NULL)
+ * @return CRYPT_ENCODER_Ctx* Encoder context, returns NULL on failure
+ */
+CRYPT_ENCODER_Ctx *CRYPT_ENCODE_ProviderNewCtx(CRYPT_EAL_LibCtx *libCtx, int32_t keyType, const char *attrName);
+
+/**
+ * @brief Free the encoder context
+ * 
+ * @param ctx Encoder context
+ */
+void CRYPT_ENCODE_Free(CRYPT_ENCODER_Ctx *ctx);
+
+/**
+ * @brief Set encoder parameters
+ * 
+ * @param ctx Encoder context
+ * @param param Parameter
+ * @return int32_t CRYPT_SUCCESS on success, error code on failure
+ */
+int32_t CRYPT_ENCODE_SetParam(CRYPT_ENCODER_Ctx *ctx, const BSL_Param *param);
+
+/**
+ * @brief Get encoder parameters
+ * 
+ * @param ctx Encoder context
+ * @param param Parameter (output)
+ * @return int32_t CRYPT_SUCCESS on success, error code on failure
+ */
+int32_t CRYPT_ENCODE_GetParam(CRYPT_ENCODER_Ctx *ctx, BSL_Param *param);
+
+/**
+ * @brief Perform encoding operation
+ * 
+ * @param ctx Encoder context
+ * @param input Input data
+ * @param inParam Input parameter
+ * @param out Output object to store encoding results
+ * @return int32_t CRYPT_SUCCESS on success, error code on failure
+ */
+int32_t CRYPT_ENCODE_Encode(CRYPT_ENCODER_Ctx *ctx, const BSL_Param *inParam, BSL_Param **outParam);
+
+/**
+ * @brief Free the output data
+ * 
+ * @param ctx Encoder context
+ * @param data Output data
+ */
+void CRYPT_ENCODE_FreeOutData(CRYPT_ENCODER_Ctx *ctx, BSL_Param *outData);
+
 typedef struct CRYPT_DECODER_PoolCtx CRYPT_DECODER_PoolCtx;
+
+typedef struct CRYPT_ENCODER_PoolCtx CRYPT_ENCODER_PoolCtx;
 
 /**
  * @brief Command codes for CRYPT_DECODE_PoolCtrl function
@@ -103,6 +161,18 @@ typedef enum {
     /** Set the not free out data */
     CRYPT_DECODE_POOL_CMD_SET_FLAG_FREE_OUT_DATA,
 } CRYPT_DECODE_POOL_CMD;
+
+/**
+ * @brief Command codes for CRYPT_ENCODE_PoolCtrl function
+ */
+typedef enum {
+    /** Set the target format */
+    CRYPT_ENCODE_POOL_CMD_SET_TARGET_FORMAT,
+    /** Set the target type */
+    CRYPT_ENCODE_POOL_CMD_SET_TARGET_TYPE,
+    /** Set the not free out data */
+    CRYPT_ENCODE_POOL_CMD_SET_FLAG_FREE_OUT_DATA,
+} CRYPT_ENCODE_POOL_CMD;
 
 /**
  * @brief Create a decoder pool context
@@ -142,6 +212,46 @@ int32_t CRYPT_DECODE_PoolDecode(CRYPT_DECODER_PoolCtx *poolCtx, const BSL_Param 
  * @return int32_t CRYPT_SUCCESS on success, error code on failure
  */
 int32_t CRYPT_DECODE_PoolCtrl(CRYPT_DECODER_PoolCtx *poolCtx, int32_t cmd, void *val, int32_t valLen);
+
+/**
+ * @brief Create an encoder pool context
+ * 
+ * @param libCtx EAL library context
+ * @param attrName Provider attribute name, can be NULL
+ * @param format Input data format (e.g., BSL_FORMAT_PEM, BSL_FORMAT_DER)
+ * @param type Encoding target type (e.g., CRYPT_ALG_ID_RSA, CRYPT_ALG_ID_EC)
+ * @return CRYPT_ENCODER_PoolCtx* Encoder pool context on success, NULL on failure
+ */
+CRYPT_ENCODER_PoolCtx *CRYPT_ENCODE_PoolNewCtx(CRYPT_EAL_LibCtx *libCtx, const char *attrName,
+    int32_t keyType, const char *format, const char *type);
+
+/**
+ * @brief Free an encoder pool context
+ * 
+ * @param poolCtx Encoder pool context
+ */
+void CRYPT_ENCODE_PoolFreeCtx(CRYPT_ENCODER_PoolCtx *poolCtx);
+
+/**
+ * @brief Encode the input data with the encoder chain
+ * 
+ * @param poolCtx Encoder pool context
+ * @param inParam Input data
+ * @param outParam Output Data
+ * @return int32_t CRYPT_SUCCESS on success, error code on failure
+ */
+int32_t CRYPT_ENCODE_PoolEncode(CRYPT_ENCODER_PoolCtx *poolCtx, const BSL_Param *inParam, BSL_Param **outParam);
+
+/**
+ * @brief Control operation for encoder pool
+ * 
+ * @param poolCtx Encoder pool context
+ * @param cmd Control command
+ * @param val The value of the control command
+ * @param valLen The length of the value
+ * @return int32_t CRYPT_SUCCESS on success, error code on failure
+ */
+int32_t CRYPT_ENCODE_PoolCtrl(CRYPT_ENCODER_PoolCtx *poolCtx, int32_t cmd, void *val, int32_t valLen);
 
 /**
  * @ingroup crypt_eal_encode

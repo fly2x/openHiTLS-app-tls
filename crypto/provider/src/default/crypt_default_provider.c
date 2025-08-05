@@ -239,6 +239,21 @@ static const CRYPT_EAL_AlgInfo g_defEalDecoders[] = {
     CRYPT_EAL_ALGINFO_END
 };
 
+/* Encoders definition */
+static const CRYPT_EAL_AlgInfo g_defEalEncoders[] = {
+    {CRYPT_PKEY_RSA, g_defEalRsaKey2Der,
+        "provider=default, inFormat=OBJECT, inType=HIGH_KEY, outFormat=ASN1, outType=PKCS8"},
+    {CRYPT_PKEY_ECDSA, g_defEalEccKey2Der,
+        "provider=default, inFormat=OBJECT, inType=HIGH_KEY, outFormat=ASN1, outType=PKCS8"},
+    {CRYPT_PKEY_SM2, g_defEalEccKey2Der,
+        "provider=default, inFormat=OBJECT, inType=HIGH_KEY, outFormat=ASN1, outType=PKCS8"},
+    {BSL_CID_UNKNOWN, g_defEalKey2Der,
+        "provider=default, inFormat=OBJECT, inType=HIGH_KEY, outFormat=ASN1, outType=PKCS8"},
+    {BSL_CID_UNKNOWN, g_defEalDer2Pem,
+        "provider=default, inFormat=ASN1, outFormat=PEM"},
+    CRYPT_EAL_ALGINFO_END
+};
+
 static int32_t CRYPT_EAL_DefaultProvQuery(void *provCtx, int32_t operaId, const CRYPT_EAL_AlgInfo **algInfos)
 {
     (void)provCtx;
@@ -276,6 +291,9 @@ static int32_t CRYPT_EAL_DefaultProvQuery(void *provCtx, int32_t operaId, const 
             break;
         case CRYPT_EAL_OPERAID_DECODER:
             *algInfos = g_defEalDecoders;
+            break;
+        case CRYPT_EAL_OPERAID_ENCODER:
+            *algInfos = g_defEalEncoders;
             break;
         default:
             ret = CRYPT_NOT_SUPPORT;

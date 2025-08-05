@@ -496,6 +496,13 @@ enum CRYPT_ERROR {
     CRYPT_DECODE_ERR_NO_KEY_TYPE,                        /**< No key type found. */
     CRYPT_DECODE_ERR_KEY_TYPE_NOT_MATCH,                 /**< Key type not match. */
 
+    /* Encoder pool error codes */
+    CRYPT_ENCODE_ERR_NO_ENCODER,                         /**< No encoder found. */
+    CRYPT_ENCODE_ERR_NO_USABLE_ENCODER,                  /**< No usable encoder found. */
+    CRYPT_ENCODE_ERR_CURR_NODE_NOT_FOUND,                /**< Current node not found. */
+    CRYPT_ENCODE_ERR_KEY_TYPE_NOT_MATCH,                 /**< Key type not match. */
+    CRYPT_ENCODE_RETRY,                                  /**< Encode retry. */
+
     CRYPT_ENCODE_NO_SUPPORT_TYPE = 0x01330001,           /**< encode no support key type. */
     CRYPT_ENCODE_NO_SUPPORT_FORMAT,                      /**< encode no support key format. */
     CRYPT_ENCODE_ERR_RSA_PAD,                            /**< rsa pad err. */
