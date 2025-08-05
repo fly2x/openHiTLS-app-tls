@@ -254,6 +254,62 @@ static const CRYPT_EAL_AlgInfo g_defEalEncoders[] = {
     CRYPT_EAL_ALGINFO_END
 };
 
+/* Unified codecs definition (merges decoders and encoders) */
+static const CRYPT_EAL_AlgInfo g_defEalCodecs[] = {
+    /* Decode operations */
+    {BSL_CID_DECODE_UNKNOWN, g_defEalPem2Der,
+        "provider=default, inFormat=PEM, outFormat=ASN1, operation=decode"},
+    {BSL_CID_DECODE_UNKNOWN, g_defEalPrvP8Enc2P8,
+        "provider=default, inFormat=ASN1, inType=PRIKEY_PKCS8_ENCRYPT, outFormat=ASN1, outType=PRIKEY_PKCS8_UNENCRYPT, operation=decode"},
+    {CRYPT_PKEY_RSA, g_defEalRsaPrvDer2Key,
+        "provider=default, inFormat=ASN1, inType=PRIKEY_RSA, outFormat=OBJECT, outType=LOW_KEY, operation=decode"},
+    {CRYPT_PKEY_RSA, g_defEalRsaPubDer2Key,
+        "provider=default, inFormat=ASN1, inType=PUBKEY_RSA, outFormat=OBJECT, outType=LOW_KEY, operation=decode"},
+    {CRYPT_PKEY_ECDSA, g_defEalEcdsaPrvDer2Key,
+        "provider=default, inFormat=ASN1, inType=PRIKEY_ECC, outFormat=OBJECT, outType=LOW_KEY, operation=decode"},
+    {CRYPT_PKEY_SM2, g_defEalSm2PrvDer2Key,
+        "provider=default, inFormat=ASN1, inType=PRIKEY_ECC, outFormat=OBJECT, outType=LOW_KEY, operation=decode"},
+    {CRYPT_PKEY_RSA, g_defEalP8Der2RsaKey,
+        "provider=default, inFormat=ASN1, inType=PRIKEY_PKCS8_UNENCRYPT, outFormat=OBJECT, outType=LOW_KEY, operation=decode"},
+    {CRYPT_PKEY_ECDSA, g_defEalP8Der2EcdsaKey,
+        "provider=default, inFormat=ASN1, inType=PRIKEY_PKCS8_UNENCRYPT, outFormat=OBJECT, outType=LOW_KEY, operation=decode"},
+    {CRYPT_PKEY_SM2, g_defEalP8Der2Sm2Key,
+        "provider=default, inFormat=ASN1, inType=PRIKEY_PKCS8_UNENCRYPT, outFormat=OBJECT, outType=LOW_KEY, operation=decode"},
+    {CRYPT_PKEY_ED25519, g_defEalP8Der2Ed25519Key,
+        "provider=default, inFormat=ASN1, inType=PRIKEY_PKCS8_UNENCRYPT, outFormat=OBJECT, outType=LOW_KEY, operation=decode"},
+    {CRYPT_PKEY_RSA, g_defEalSubPubKeyDer2RsaKey,
+        "provider=default, inFormat=ASN1, inType=PUBKEY_SUBKEY, outFormat=OBJECT, outType=LOW_KEY, operation=decode"},
+    {CRYPT_PKEY_ECDSA, g_defEalSubPubKeyDer2EcdsaKey,
+        "provider=default, inFormat=ASN1, inType=PUBKEY_SUBKEY, outFormat=OBJECT, outType=LOW_KEY, operation=decode"},
+    {CRYPT_PKEY_SM2, g_defEalSubPubKeyDer2Sm2Key,
+        "provider=default, inFormat=ASN1, inType=PUBKEY_SUBKEY, outFormat=OBJECT, outType=LOW_KEY, operation=decode"},
+    {CRYPT_PKEY_ED25519, g_defEalSubPubKeyDer2Ed25519Key,
+        "provider=default, inFormat=ASN1, inType=PUBKEY_SUBKEY, outFormat=OBJECT, outType=LOW_KEY, operation=decode"},
+    {CRYPT_PKEY_RSA, g_defEalSubPubKeyWithoutSeqDer2RsaKey,
+        "provider=default, inFormat=ASN1, inType=PUBKEY_SUBKEY_WITHOUT_SEQ, outFormat=OBJECT, outType=LOW_KEY, operation=decode"},
+    {CRYPT_PKEY_ECDSA, g_defEalSubPubKeyWithoutSeqDer2EcdsaKey,
+        "provider=default, inFormat=ASN1, inType=PUBKEY_SUBKEY_WITHOUT_SEQ, outFormat=OBJECT, outType=LOW_KEY, operation=decode"},
+    {CRYPT_PKEY_SM2, g_defEalSubPubKeyWithoutSeqDer2Sm2Key,
+        "provider=default, inFormat=ASN1, inType=PUBKEY_SUBKEY_WITHOUT_SEQ, outFormat=OBJECT, outType=LOW_KEY, operation=decode"},
+    {CRYPT_PKEY_ED25519, g_defEalSubPubKeyWithoutSeqDer2Ed25519Key,
+        "provider=default, inFormat=ASN1, inType=PUBKEY_SUBKEY_WITHOUT_SEQ, outFormat=OBJECT, outType=LOW_KEY, operation=decode"},
+    {BSL_CID_DECODE_UNKNOWN, g_defEalLowKeyObject2PkeyObject,
+        "provider=default, inFormat=OBJECT, inType=LOW_KEY, outFormat=OBJECT, outType=HIGH_KEY, operation=decode"},
+    
+    /* Encode operations */
+    {CRYPT_PKEY_RSA, g_defEalRsaKey2Der,
+        "provider=default, inFormat=OBJECT, inType=HIGH_KEY, outFormat=ASN1, outType=PKCS8, operation=encode"},
+    {CRYPT_PKEY_ECDSA, g_defEalEccKey2Der,
+        "provider=default, inFormat=OBJECT, inType=HIGH_KEY, outFormat=ASN1, outType=PKCS8, operation=encode"},
+    {CRYPT_PKEY_SM2, g_defEalEccKey2Der,
+        "provider=default, inFormat=OBJECT, inType=HIGH_KEY, outFormat=ASN1, outType=PKCS8, operation=encode"},
+    {BSL_CID_UNKNOWN, g_defEalKey2Der,
+        "provider=default, inFormat=OBJECT, inType=HIGH_KEY, outFormat=ASN1, outType=PKCS8, operation=encode"},
+    {BSL_CID_UNKNOWN, g_defEalDer2Pem,
+        "provider=default, inFormat=ASN1, outFormat=PEM, operation=encode"},
+    CRYPT_EAL_ALGINFO_END
+};
+
 static int32_t CRYPT_EAL_DefaultProvQuery(void *provCtx, int32_t operaId, const CRYPT_EAL_AlgInfo **algInfos)
 {
     (void)provCtx;
@@ -289,10 +345,17 @@ static int32_t CRYPT_EAL_DefaultProvQuery(void *provCtx, int32_t operaId, const 
         case CRYPT_EAL_OPERAID_RAND:
             *algInfos = g_defEalRands;
             break;
+        case CRYPT_EAL_OPERAID_CODEC:
+            // Unified codec - combine both decoders and encoders
+            // For now, return decoders first (can be enhanced to merge dynamically)
+            *algInfos = g_defEalCodecs;
+            break;
         case CRYPT_EAL_OPERAID_DECODER:
+            // Backward compatibility
             *algInfos = g_defEalDecoders;
             break;
         case CRYPT_EAL_OPERAID_ENCODER:
+            // Backward compatibility
             *algInfos = g_defEalEncoders;
             break;
         default:

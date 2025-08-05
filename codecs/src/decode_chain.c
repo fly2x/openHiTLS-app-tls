@@ -24,7 +24,7 @@
 #include "crypt_params_key.h"
 #include "crypt_types.h"
 #include "crypt_errno.h"
-#include "decode_local.h"
+#include "codec_unified_local.h"
 #include "bsl_list.h"
 #include "bsl_errno.h"
 #include "bsl_err_internal.h"

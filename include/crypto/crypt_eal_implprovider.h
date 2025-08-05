@@ -313,6 +313,42 @@ typedef int32_t (*CRYPT_ENCODER_IMPL_Encode)(void *ctx, const BSL_Param *inParam
 typedef void (*CRYPT_ENCODER_IMPL_FreeOutData)(void *ctx, BSL_Param *outData);
 typedef void (*CRYPT_ENCODER_IMPL_FreeCtx)(void *ctx);
 
+/* === UNIFIED CODEC INTERFACE (replaces both DECODER and ENCODER) === */
+// CRYPT_EAL_OPERAID_CODEC (replaces both OPERAID_DECODER and OPERAID_ENCODER)
+#define CRYPT_EAL_OPERAID_CODEC          13
+
+#define CRYPT_CODEC_IMPL_NEWCTX          1
+#define CRYPT_CODEC_IMPL_SETPARAM        2
+#define CRYPT_CODEC_IMPL_GETPARAM        3
+#define CRYPT_CODEC_IMPL_PROCESS         4  /* Unified process (encode/decode) */
+#define CRYPT_CODEC_IMPL_CTRL            5  /* Control operations */
+#define CRYPT_CODEC_IMPL_FREEOUTDATA     6
+#define CRYPT_CODEC_IMPL_FREECTX         7
+
+typedef void *(*CRYPT_CODEC_IMPL_NewCtx)(void *provCtx);
+typedef int32_t (*CRYPT_CODEC_IMPL_SetParam)(void *ctx, const BSL_Param *param);
+typedef int32_t (*CRYPT_CODEC_IMPL_GetParam)(void *ctx, BSL_Param *param);
+typedef int32_t (*CRYPT_CODEC_IMPL_Process)(void *ctx, const BSL_Param *inParam, BSL_Param **outParam);
+typedef int32_t (*CRYPT_CODEC_IMPL_Ctrl)(void *ctx, int32_t cmd, void *val, int32_t valLen);
+typedef void (*CRYPT_CODEC_IMPL_FreeOutData)(void *ctx, BSL_Param *outData);
+typedef void (*CRYPT_CODEC_IMPL_FreeCtx)(void *ctx);
+
+/* === BACKWARD COMPATIBILITY (will be deprecated) === */
+/* Keep old definitions for transition period */
+typedef CRYPT_CODEC_IMPL_NewCtx CRYPT_DECODER_IMPL_NewCtx;
+typedef CRYPT_CODEC_IMPL_SetParam CRYPT_DECODER_IMPL_SetParam;
+typedef CRYPT_CODEC_IMPL_GetParam CRYPT_DECODER_IMPL_GetParam;
+typedef CRYPT_CODEC_IMPL_Process CRYPT_DECODER_IMPL_Decode;
+typedef CRYPT_CODEC_IMPL_FreeOutData CRYPT_DECODER_IMPL_FreeOutData;
+typedef CRYPT_CODEC_IMPL_FreeCtx CRYPT_DECODER_IMPL_FreeCtx;
+
+typedef CRYPT_CODEC_IMPL_NewCtx CRYPT_ENCODER_IMPL_NewCtx;
+typedef CRYPT_CODEC_IMPL_SetParam CRYPT_ENCODER_IMPL_SetParam;
+typedef CRYPT_CODEC_IMPL_GetParam CRYPT_ENCODER_IMPL_GetParam;
+typedef CRYPT_CODEC_IMPL_Process CRYPT_ENCODER_IMPL_Encode;
+typedef CRYPT_CODEC_IMPL_FreeOutData CRYPT_ENCODER_IMPL_FreeOutData;
+typedef CRYPT_CODEC_IMPL_FreeCtx CRYPT_ENCODER_IMPL_FreeCtx;
+
 // CRYPT_EAL_OPERAID_SELFTEST
 #define CRYPT_EAL_IMPLSELFTEST_NEWCTX           1
 #define CRYPT_EAL_IMPLSELFTEST_GETVERSION       2

@@ -29,7 +29,7 @@
 #include "bsl_types.h"
 #include "crypt_types.h"
 #include "crypt_utils.h"
-#include "encode_local.h"
+#include "codec_unified_local.h"
 
 int32_t CRYPT_ENCODE_ParseEncoderAttr(const char *attrName, ENCODER_AttrInfo *info)
 {

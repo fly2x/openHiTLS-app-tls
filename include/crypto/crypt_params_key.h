@@ -219,6 +219,22 @@ extern "C" {
 #define CRYPT_PARAM_CMVP_LOG_FUNC                           (CRYPT_PARAM_CMVP_BASE + 1)
 #define CRYPT_PARAM_CMVP_SELFTEST_TYPE                      (CRYPT_PARAM_CMVP_BASE + 2)
 
+/* Unified Codec parameters */
+#define CRYPT_PARAM_CODEC_BASE                              5300
+#define CRYPT_PARAM_CODEC_OPERATION_TYPE                    (CRYPT_PARAM_CODEC_BASE + 1)
+#define CRYPT_PARAM_CODEC_INPUT_FORMAT                      (CRYPT_PARAM_CODEC_BASE + 2)
+#define CRYPT_PARAM_CODEC_INPUT_TYPE                        (CRYPT_PARAM_CODEC_BASE + 3)
+#define CRYPT_PARAM_CODEC_OUTPUT_FORMAT                     (CRYPT_PARAM_CODEC_BASE + 4)
+#define CRYPT_PARAM_CODEC_OUTPUT_TYPE                       (CRYPT_PARAM_CODEC_BASE + 5)
+#define CRYPT_PARAM_CODEC_INPUT_DATA                        (CRYPT_PARAM_CODEC_BASE + 6)
+#define CRYPT_PARAM_CODEC_OUTPUT_DATA                       (CRYPT_PARAM_CODEC_BASE + 7)
+#define CRYPT_PARAM_CODEC_PASSWORD                          (CRYPT_PARAM_CODEC_BASE + 8)
+#define CRYPT_PARAM_CODEC_KEY_TYPE                          (CRYPT_PARAM_CODEC_BASE + 9)
+#define CRYPT_PARAM_CODEC_PROVIDER_CTX                      (CRYPT_PARAM_CODEC_BASE + 10)
+#define CRYPT_PARAM_CODEC_TARGET_FORMAT                     (CRYPT_PARAM_CODEC_BASE + 11)
+#define CRYPT_PARAM_CODEC_TARGET_TYPE                       (CRYPT_PARAM_CODEC_BASE + 12)
+#define CRYPT_PARAM_CODEC_FREE_OUT_DATA                     (CRYPT_PARAM_CODEC_BASE + 13)
+
 #ifdef __cplusplus
 }
 #endif
