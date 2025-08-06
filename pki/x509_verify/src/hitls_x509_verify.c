@@ -18,6 +18,8 @@
 #include <string.h>
 #include "securec.h"
 #include "hitls_pki_x509.h"
+#include "hitls_pki_cert.h"
+#include "bsl_types.h"
 #include "sal_atomic.h"
 #include "bsl_err_internal.h"
 #include "hitls_crl_local.h"
@@ -28,6 +30,9 @@
 #include "bsl_list.h"
 #include "bsl_list_internal.h"
 #include "hitls_x509_verify.h"
+#include "crypt_eal_md.h"
+#include "crypt_algid.h"
+#include "crypt_errno.h"
 
 typedef int32_t (*HITLS_X509_TrvListCallBack)(void *ctx, void *node);
 typedef int32_t (*HITLS_X509_TrvListWithParentCallBack)(void *ctx, void *node, void *parent);
@@ -82,6 +87,12 @@ void HITLS_X509_StoreCtxFree(HITLS_X509_StoreCtx *storeCtx)
 #endif
     BSL_LIST_FREE(storeCtx->store, (BSL_LIST_PFUNC_FREE)HITLS_X509_CertFree);
     BSL_LIST_FREE(storeCtx->crl, (BSL_LIST_PFUNC_FREE)HITLS_X509_CrlFree);
+    
+    // Free CA paths list
+    if (storeCtx->caPaths != NULL) {
+        BSL_LIST_FREE(storeCtx->caPaths, (BSL_LIST_PFUNC_FREE)BSL_SAL_Free);
+    }
+    
     BSL_SAL_ReferencesFree(&storeCtx->references);
     BSL_SAL_Free(storeCtx);
 }
@@ -132,6 +143,16 @@ HITLS_X509_StoreCtx *HITLS_X509_StoreCtxNew(void)
     ctx->crl = BSL_LIST_New(sizeof(HITLS_X509_Crl *));
     if (ctx->crl == NULL) {
         BSL_SAL_FREE(ctx->store);
+        BSL_SAL_Free(ctx);
+        BSL_ERR_PUSH_ERROR(BSL_MALLOC_FAIL);
+        return NULL;
+    }
+    
+    // Initialize CA paths list
+    ctx->caPaths = BSL_LIST_New(sizeof(char *));
+    if (ctx->caPaths == NULL) {
+        BSL_SAL_FREE(ctx->store);
+        BSL_SAL_FREE(ctx->crl);
         BSL_SAL_Free(ctx);
         BSL_ERR_PUSH_ERROR(BSL_MALLOC_FAIL);
         return NULL;
@@ -286,6 +307,9 @@ static int32_t X509_SetCRL(HITLS_X509_StoreCtx *storeCtx, void *val)
     return ret;
 }
 
+static int32_t X509_SetCAPath(HITLS_X509_StoreCtx *storeCtx, const void *val, uint32_t valLen);
+static int32_t X509_AddCAPath(HITLS_X509_StoreCtx *storeCtx, const void *val, uint32_t valLen);
+
 static int32_t X509_RefUp(HITLS_X509_StoreCtx *storeCtx, void *val, uint32_t valLen)
 {
     if (valLen != sizeof(int)) {
@@ -327,6 +351,10 @@ int32_t HITLS_X509_StoreCtxCtrl(HITLS_X509_StoreCtx *storeCtx, int32_t cmd, void
 #endif
         case HITLS_X509_STORECTX_GET_PARAM_DEPTH:
             return X509_GetMaxDepth(storeCtx, val, valLen);
+        case HITLS_X509_STORECTX_LOAD_CA_PATH:
+            return X509_SetCAPath(storeCtx, val, valLen);
+        case HITLS_X509_STORECTX_ADD_CA_PATH:
+            return X509_AddCAPath(storeCtx, val, valLen);
         default:
             BSL_ERR_PUSH_ERROR(HITLS_X509_ERR_INVALID_PARAM);
             return HITLS_X509_ERR_INVALID_PARAM;
@@ -401,24 +429,203 @@ int32_t X509_GetIssueFromChain(HITLS_X509_List *certChain, HITLS_X509_Cert *cert
     return HITLS_X509_ERR_ISSUE_CERT_NOT_FOUND;
 }
 
+/**
+ * @brief Get certificate by subject DN using DER-encoded subject data, supporting on-demand loading
+ * @param storeCtx [IN] Store context
+ * @param subjectDerData [IN] DER-encoded subject DN data
+ * @param cert [OUT] Found certificate
+ * @return HITLS_PKI_SUCCESS on success, error code otherwise
+ */
+static int32_t HITLS_X509_GetCertBySubjectDer(HITLS_X509_StoreCtx *storeCtx, const BSL_Buffer *subjectDerData, HITLS_X509_Cert **cert)
+{
+    if (storeCtx == NULL || subjectDerData == NULL || subjectDerData->data == NULL || 
+        subjectDerData->dataLen == 0 || cert == NULL) {
+        BSL_ERR_PUSH_ERROR(HITLS_X509_ERR_INVALID_PARAM);
+        return HITLS_X509_ERR_INVALID_PARAM;
+    }
+    
+    // Only try on-demand loading from CA paths using hash-based lookup
+    if (storeCtx->caPaths == NULL || BSL_LIST_COUNT(storeCtx->caPaths) <= 0) {
+        BSL_ERR_PUSH_ERROR(HITLS_X509_ERR_ISSUE_CERT_NOT_FOUND);
+        return HITLS_X509_ERR_ISSUE_CERT_NOT_FOUND;
+    }
+    
+    // Calculate hash from DER-encoded subject DN
+    uint32_t hash = 0;
+    CRYPT_EAL_MdCTX *mdCtx = CRYPT_EAL_MdNewCtx(CRYPT_MD_SHA1);
+    if (mdCtx != NULL) {
+        if (CRYPT_EAL_MdInit(mdCtx) == CRYPT_SUCCESS &&
+            CRYPT_EAL_MdUpdate(mdCtx, subjectDerData->data, subjectDerData->dataLen) == CRYPT_SUCCESS) {
+            uint8_t digest[20];
+            uint32_t digestLen = sizeof(digest);
+            if (CRYPT_EAL_MdFinal(mdCtx, digest, &digestLen) == CRYPT_SUCCESS && digestLen >= 4) {
+                hash = (uint32_t)digest[0] | ((uint32_t)digest[1] << 8) | 
+                       ((uint32_t)digest[2] << 16) | ((uint32_t)digest[3] << 24);
+            }
+        }
+        CRYPT_EAL_MdFreeCtx(mdCtx);
+    }
+    
+    if (hash == 0) {
+        BSL_ERR_PUSH_ERROR(HITLS_X509_ERR_ISSUE_CERT_NOT_FOUND);
+        return HITLS_X509_ERR_ISSUE_CERT_NOT_FOUND;
+    }
+    
+    // Try to load certificate using hash-based file lookup from CA paths
+    char *caPath = BSL_LIST_GET_FIRST(storeCtx->caPaths);
+    while (caPath != NULL) {
+        // Try different file name patterns (like OpenSSL does)
+        for (int seq = 0; seq < 10; seq++) {  // Try up to 10 sequence numbers
+            char filename[256];
+            if (snprintf_s(filename, sizeof(filename), sizeof(filename) - 1, 
+                          "%s/%08x.%d", caPath, hash, seq) < 0) {
+                continue;
+            }
+            
+            // Try to parse certificate from file
+            HITLS_X509_Cert *candidateCert = NULL;
+            int32_t ret = HITLS_X509_CertParseFile(BSL_FORMAT_UNKNOWN, filename, &candidateCert);
+            if (ret != HITLS_PKI_SUCCESS) {
+                continue; // Try next sequence number
+            }
+
+            (void)X509_SetCA(storeCtx, candidateCert, true);
+            *cert = candidateCert;
+            return HITLS_PKI_SUCCESS;
+        }
+        caPath = BSL_LIST_GET_NEXT(storeCtx->caPaths);
+    }
+    
+    BSL_ERR_PUSH_ERROR(HITLS_X509_ERR_ISSUE_CERT_NOT_FOUND);
+    return HITLS_X509_ERR_ISSUE_CERT_NOT_FOUND;
+}
+
+typedef struct {
+    uint8_t tag;
+    uint32_t len;
+    uint8_t *buff;
+} BSL_ASN1_Buffer_Inner;
+
+static uint32_t X509_Dn2Der(BSL_ASN1_List *nameList, uint8_t derData[])
+{
+    HITLS_X509_NameNode *node = BSL_LIST_GET_FIRST(nameList);
+    uint32_t pos = 0;
+    while (node != NULL) {
+        if (node->layer == 1) {
+            node = BSL_LIST_GET_NEXT(nameList);
+            continue;
+        }
+
+        uint32_t setPos;
+        uint32_t sequencePos;
+        derData[pos] = 0x31;
+        pos++;
+        setPos = pos;
+        pos++;
+        derData[pos] = 0x30;
+        pos++;
+        sequencePos = pos;
+        pos++;
+
+        derData[pos] = ((BSL_ASN1_Buffer_Inner *)(&node->nameType))->tag;
+        pos++;
+        derData[pos] = ((BSL_ASN1_Buffer_Inner *)(&node->nameType))->len; // Length <= 255
+        pos++;
+        memcpy(derData + pos, ((BSL_ASN1_Buffer_Inner *)(&node->nameType))->buff, ((BSL_ASN1_Buffer_Inner *)(&node->nameType))->len);
+        pos += ((BSL_ASN1_Buffer_Inner *)(&node->nameType))->len;
+
+        derData[pos] = 0x0C;
+        pos++;
+        derData[pos] = ((BSL_ASN1_Buffer_Inner *)(&node->nameValue))->len; // Length <= 255
+        pos++;
+
+        for (uint32_t i = 0; i < ((BSL_ASN1_Buffer_Inner *)(&node->nameValue))->len; i++) {
+            derData[pos] = ((BSL_ASN1_Buffer_Inner *)(&node->nameValue))->buff[i];
+            if (derData[pos] >= 0x41 && derData[pos] <= 0x5A)
+                derData[pos] += 0x20;
+            pos++;
+        }
+
+        derData[setPos] = pos - setPos - 1; // Update set length
+        derData[sequencePos] = pos - sequencePos - 1;  // Update sequence length
+
+        node = BSL_LIST_GET_NEXT(nameList);
+    }
+    return pos;
+}
+
+uint32_t HITLS_X509_DnHashTest(HITLS_X509_List *nameList)
+{
+    uint8_t derData[2048] = { 0 };
+    uint8_t len = X509_Dn2Der(nameList, derData);
+    uint32_t hash = 0;
+    CRYPT_EAL_MdCTX *mdCtx = CRYPT_EAL_MdNewCtx(CRYPT_MD_SHA1);
+    if (mdCtx != NULL) {
+        if (CRYPT_EAL_MdInit(mdCtx) == CRYPT_SUCCESS &&
+            CRYPT_EAL_MdUpdate(mdCtx, derData, len) == CRYPT_SUCCESS) {
+            uint8_t digest[20];
+            uint32_t digestLen = sizeof(digest);
+            if (CRYPT_EAL_MdFinal(mdCtx, digest, &digestLen) == CRYPT_SUCCESS && digestLen >= 4) {
+                hash = (uint32_t)digest[0] | ((uint32_t)digest[1] << 8) | 
+                       ((uint32_t)digest[2] << 16) | ((uint32_t)digest[3] << 24);
+            }
+        }
+        CRYPT_EAL_MdFreeCtx(mdCtx);
+    }
+    return hash;
+}
+
 int32_t X509_FindIssueCert(HITLS_X509_StoreCtx *storeCtx, HITLS_X509_List *certChain, HITLS_X509_Cert *cert,
     HITLS_X509_Cert **issue, bool *issueInTrust)
 {
+    // First try to find issuer in explicitly loaded store
     HITLS_X509_List *store = storeCtx->store;
     int32_t ret = X509_GetIssueFromChain(store, cert, issue);
     if (ret == HITLS_PKI_SUCCESS) {
         *issueInTrust = true;
         return ret;
     }
-    if (certChain == NULL) {
-        return ret;
+
+    // Then try the certificate chain if provided
+    if (certChain != NULL) {
+        ret = X509_GetIssueFromChain(certChain, cert, issue);
+        if (ret == HITLS_PKI_SUCCESS) {
+            *issueInTrust = false;
+            return ret;
+        }
     }
-    ret = X509_GetIssueFromChain(certChain, cert, issue);
-    if (ret != HITLS_PKI_SUCCESS) {
-        return ret;
+
+    // If we have CA paths set, try on-demand loading based on issuer DER-encoded DN
+    if (storeCtx->caPaths != NULL && BSL_LIST_COUNT(storeCtx->caPaths) > 0) {
+        BSL_ASN1_List *nameList = NULL;
+        ret = HITLS_X509_CertCtrl(cert, HITLS_X509_GET_ISSUER_DN, &nameList, sizeof(BSL_ASN1_List *));
+        if (ret != HITLS_PKI_SUCCESS) {
+            BSL_ERR_PUSH_ERROR(ret);
+            return ret;
+        }
+        uint8_t derData[2048] = { 0 };
+        uint8_t len = X509_Dn2Der(nameList, derData);
+        BSL_Buffer issuerDerData = {derData, len};
+        if (ret == HITLS_PKI_SUCCESS && issuerDerData.data != NULL && issuerDerData.dataLen > 0) {
+            HITLS_X509_Cert *loadedCert = NULL;
+            ret = HITLS_X509_GetCertBySubjectDer(storeCtx, &issuerDerData, &loadedCert);
+            if (ret == HITLS_PKI_SUCCESS && loadedCert != NULL) {
+                // Verify this is actually the issuer using HITLS_X509_CheckIssued
+                bool isIssuer = false;
+                ret = HITLS_X509_CheckIssued(loadedCert, cert, &isIssuer);
+                if (ret == HITLS_PKI_SUCCESS && isIssuer) {
+                    *issue = loadedCert;
+                    *issueInTrust = true;
+                    return HITLS_PKI_SUCCESS;
+                } else {
+                    HITLS_X509_CertFree(loadedCert);
+                }
+            }
+        }
     }
-    *issueInTrust = false;
-    return ret;
+    
+    BSL_ERR_PUSH_ERROR(HITLS_X509_ERR_ISSUE_CERT_NOT_FOUND);
+    return HITLS_X509_ERR_ISSUE_CERT_NOT_FOUND;
 }
 
 int32_t X509_BuildChain(HITLS_X509_StoreCtx *storeCtx, HITLS_X509_List *certChain, HITLS_X509_Cert *cert,
@@ -797,4 +1004,104 @@ HITLS_X509_StoreCtx *HITLS_X509_ProviderStoreCtxNew(HITLS_PKI_LibCtx *libCtx, co
     storeCtx->attrName = attrName;
     return storeCtx;
 }
+
+/**
+ * @brief Add CA directory path for on-demand certificate loading
+ * @param storeCtx [IN] Store context
+ * @param val [IN] Directory path as char*
+ * @param valLen [IN] Length of path string
+ * @return HITLS_PKI_SUCCESS on success, error code otherwise
+ */
+static int32_t X509_AddCAPath(HITLS_X509_StoreCtx *storeCtx, const void *val, uint32_t valLen)
+{
+    if (val == NULL || valLen == 0) {
+        BSL_ERR_PUSH_ERROR(HITLS_X509_ERR_INVALID_PARAM);
+        return HITLS_X509_ERR_INVALID_PARAM;
+    }
+    
+    const char *caPath = (const char *)val;
+    
+    // Allocate and copy new path
+    size_t pathLen = strlen(caPath) + 1;
+    char *pathCopy = BSL_SAL_Malloc(pathLen);
+    if (pathCopy == NULL) {
+        BSL_ERR_PUSH_ERROR(BSL_MALLOC_FAIL);
+        return BSL_MALLOC_FAIL;
+    }
+    
+    if (strcpy_s(pathCopy, pathLen, caPath) != EOK) {
+        BSL_SAL_Free(pathCopy);
+        BSL_ERR_PUSH_ERROR(HITLS_X509_ERR_INVALID_PARAM);
+        return HITLS_X509_ERR_INVALID_PARAM;
+    }
+    
+    // Add to paths list
+    int32_t ret = BSL_LIST_AddElement(storeCtx->caPaths, pathCopy, BSL_LIST_POS_END);
+    if (ret != BSL_SUCCESS) {
+        BSL_SAL_Free(pathCopy);
+        BSL_ERR_PUSH_ERROR(ret);
+        return ret;
+    }
+    
+    return HITLS_PKI_SUCCESS;
+}
+
+/**
+ * @brief Set CA directory path for on-demand certificate loading (legacy single path support)
+ * @param storeCtx [IN] Store context
+ * @param val [IN] Directory path as char*
+ * @param valLen [IN] Length of path string
+ * @return HITLS_PKI_SUCCESS on success, error code otherwise
+ */
+static int32_t X509_SetCAPath(HITLS_X509_StoreCtx *storeCtx, const void *val, uint32_t valLen)
+{
+    // Clear existing paths first
+    if (storeCtx->caPaths != NULL) {
+        BSL_LIST_FREE(storeCtx->caPaths, (BSL_LIST_PFUNC_FREE)BSL_SAL_Free);
+        storeCtx->caPaths = BSL_LIST_New(sizeof(char *));
+        if (storeCtx->caPaths == NULL) {
+            BSL_ERR_PUSH_ERROR(BSL_MALLOC_FAIL);
+            return BSL_MALLOC_FAIL;
+        }
+    }
+    
+    // Add the single path
+    return X509_AddCAPath(storeCtx, val, valLen);
+}
+
+/**
+ * @brief Get certificate by subject DN, supporting on-demand loading
+ * @param storeCtx [IN] Store context
+ * @param subjectDn [IN] Subject DN to search for
+ * @param cert [OUT] Found certificate
+ * @return HITLS_PKI_SUCCESS on success, error code otherwise
+ */
+int32_t HITLS_X509_GetIssuerFromStore(HITLS_X509_StoreCtx *storeCtx, HITLS_X509_Cert *cert, HITLS_X509_Cert **issuer)
+{
+    bool issueInTrust = false;
+    return X509_FindIssueCert(storeCtx, NULL, cert, issuer, &issueInTrust);
+}
+
+int32_t HITLS_X509_StoreLoadPath(HITLS_X509_StoreCtx *storeCtx, const char *caPath)
+{
+    if (storeCtx == NULL || caPath == NULL) {
+        BSL_ERR_PUSH_ERROR(HITLS_X509_ERR_INVALID_PARAM);
+        return HITLS_X509_ERR_INVALID_PARAM;
+    }
+    
+    uint32_t pathLen = strlen(caPath);
+    return X509_SetCAPath(storeCtx, caPath, pathLen);
+}
+
+int32_t HITLS_X509_StoreAddPath(HITLS_X509_StoreCtx *storeCtx, const char *caPath)
+{
+    if (storeCtx == NULL || caPath == NULL) {
+        BSL_ERR_PUSH_ERROR(HITLS_X509_ERR_INVALID_PARAM);
+        return HITLS_X509_ERR_INVALID_PARAM;
+    }
+    
+    uint32_t pathLen = strlen(caPath);
+    return X509_AddCAPath(storeCtx, caPath, pathLen);
+}
+
 #endif // HITLS_PKI_X509_VFY

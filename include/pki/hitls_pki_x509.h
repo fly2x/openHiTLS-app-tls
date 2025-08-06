@@ -69,6 +69,7 @@ void HITLS_X509_StoreCtxFree(HITLS_X509_StoreCtx *storeCtx);
  *        HITLS_X509_STORECTX_REF_UP                    int                 sizeof(int)
  *        HITLS_X509_STORECTX_SET_VFY_SM2_USERID        buffer              > 0
  *        HITLS_X509_STORECTX_GET_PARAM_DEPTH           int32_t *             sizeof(int32_t)
+ *        HITLS_X509_STORECTX_LOAD_CA_PATH              char *              string length
  * @param val [IN/OUT] input and output value.
  * @param valLen [IN] value length.
  * @retval #HITLS_PKI_SUCCESS, success.
@@ -100,6 +101,36 @@ int32_t HITLS_X509_CertVerify(HITLS_X509_StoreCtx *storeCtx, HITLS_X509_List *ch
  */
 int32_t HITLS_X509_CertChainBuild(HITLS_X509_StoreCtx *storeCtx, bool isWithRoot, HITLS_X509_Cert *cert,
     HITLS_X509_List **chain);
+
+/**
+ * @ingroup pki
+ * @brief Load CA certificates from a directory path.
+ *
+ * This function sets a CA directory path for on-demand loading similar to OpenSSL's X509_STORE_load_path.
+ * It replaces any existing CA paths with the new path. The path should contain CA certificates 
+ * named using subject DN hash values.
+ *
+ * @param storeCtx [IN] StoreCtx context.
+ * @param caPath [IN] Directory path containing CA certificate files.
+ * @retval #HITLS_PKI_SUCCESS, success.
+ *         Error codes can be found in hitls_pki_errno.h
+ */
+int32_t HITLS_X509_StoreLoadPath(HITLS_X509_StoreCtx *storeCtx, const char *caPath);
+
+/**
+ * @ingroup pki
+ * @brief Add additional CA directory path for on-demand certificate loading.
+ *
+ * This function adds an additional CA directory path for on-demand loading.
+ * Multiple paths can be added to support different certificate stores.
+ * Certificates will be searched in all configured paths.
+ *
+ * @param storeCtx [IN] StoreCtx context.
+ * @param caPath [IN] Directory path containing CA certificate files.
+ * @retval #HITLS_PKI_SUCCESS, success.
+ *         Error codes can be found in hitls_pki_errno.h
+ */
+int32_t HITLS_X509_StoreAddPath(HITLS_X509_StoreCtx *storeCtx, const char *caPath);
 
 #ifdef __cplusplus
 }
