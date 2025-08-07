@@ -62,6 +62,10 @@
 #ifdef HITLS_CRYPTO_XMSS
 #include "crypt_xmss.h"
 #endif
+#ifdef HITLS_CRYPTO_LMS
+#include "crypt_lms.h"
+#include "crypt_hss.h"
+#endif
 #include "bsl_err_internal.h"
 #include "crypt_types.h"
 #include "crypt_errno.h"
@@ -597,6 +601,66 @@ static const EAL_PkeyMethod METHODS[] = {
         NULL,
         CRYPT_XMSS_Verify,
         NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL
+    ),
+#endif
+#ifdef HITLS_CRYPTO_LMS
+    EAL_PKEY_METHOD_DEFINE(
+        CRYPT_PKEY_LMS,
+        CRYPT_LMS_NewCtx,
+        NULL, // dupCtx
+        CRYPT_LMS_FreeCtx,
+        NULL, // setPara
+        NULL, // getPara
+        CRYPT_LMS_Gen,
+        CRYPT_LMS_Ctrl,
+        CRYPT_LMS_SetPubKey,
+        CRYPT_LMS_SetPrvKey,
+        CRYPT_LMS_GetPubKey,
+        CRYPT_LMS_GetPrvKey,
+        CRYPT_LMS_Sign,
+        NULL,
+        CRYPT_LMS_Verify,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL
+    ),
+#endif
+#ifdef HITLS_CRYPTO_LMS
+    EAL_PKEY_METHOD_DEFINE(
+        CRYPT_PKEY_HSS,
+        CRYPT_HSS_NewCtx,
+        CRYPT_HSS_DupCtx,
+        CRYPT_HSS_FreeCtx,
+        NULL, // setPara
+        NULL, // getPara
+        NULL, // gen - uses custom parameter structure
+        CRYPT_HSS_Ctrl,
+        CRYPT_HSS_SetPubKey,
+        CRYPT_HSS_SetPrvKey,
+        CRYPT_HSS_GetPubKey,
+        CRYPT_HSS_GetPrvKey,
+        CRYPT_HSS_Sign,
+        NULL,
+        CRYPT_HSS_Verify,
         NULL,
         NULL,
         NULL,

@@ -576,6 +576,14 @@ enum CRYPT_ERROR {
     CRYPT_XMSS_ERR_INVALID_SIG_LEN,                    /**< The signature length is invalid. */
     CRYPT_XMSS_ERR_INVALID_KEYLEN,                     /**< The key length is invalid. */
     CRYPT_XMSS_ERR_KEY_EXPIRED,                        /**< The key has expired. */
+    
+    CRYPT_LMS_ERR_INVALID_ALGID = 0x013C0001,          /**< The LMS algorithm id is invalid. */
+    CRYPT_LMS_ERR_INVALID_SIG_LEN,                     /**< The LMS signature length is invalid. */
+    CRYPT_LMS_ERR_INVALID_KEYLEN,                      /**< The LMS key length is invalid. */
+    CRYPT_LMS_ERR_KEY_EXPIRED,                         /**< The LMS key has expired. */
+    CRYPT_LMS_ERR_INVALID_HSS_LEVEL,                   /**< The HSS level is invalid. */
+    CRYPT_LMS_ERR_INVALID_PARAM,                       /**< Invalid parameter. */
+    CRYPT_LMS_ERR_SIGNATURE_VERIFY_FAIL,               /**< Signature verification failed. */
 };
 #ifdef __cplusplus
 }

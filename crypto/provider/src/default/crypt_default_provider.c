@@ -76,6 +76,8 @@ static const CRYPT_EAL_AlgInfo g_defEalKeyMgmt[] = {
     {CRYPT_PKEY_PAILLIER, g_defEalKeyMgmtPaillier, CRYPT_EAL_DEFAULT_ATTR},
     {CRYPT_PKEY_ELGAMAL, g_defEalKeyMgmtElGamal, CRYPT_EAL_DEFAULT_ATTR},
     {CRYPT_PKEY_SLH_DSA, g_defEalKeyMgmtSlhDsa, CRYPT_EAL_DEFAULT_ATTR},
+    {CRYPT_PKEY_LMS, g_defEalKeyMgmtLms, CRYPT_EAL_DEFAULT_ATTR},
+    {CRYPT_PKEY_HSS, g_defEalKeyMgmtHss, CRYPT_EAL_DEFAULT_ATTR},
     {CRYPT_PKEY_ML_KEM, g_defEalKeyMgmtMlKem, CRYPT_EAL_DEFAULT_ATTR},
     {CRYPT_PKEY_ML_DSA, g_defEalKeyMgmtMlDsa, CRYPT_EAL_DEFAULT_ATTR},
     {CRYPT_PKEY_HYBRID_KEM, g_defEalKeyMgmtHybridKem, CRYPT_EAL_DEFAULT_ATTR},
@@ -105,6 +107,8 @@ static const CRYPT_EAL_AlgInfo g_defEalSigns[] = {
     {CRYPT_PKEY_ECDSA, g_defEalSignEcdsa, CRYPT_EAL_DEFAULT_ATTR},
     {CRYPT_PKEY_SM2, g_defEalSignSm2, CRYPT_EAL_DEFAULT_ATTR},
     {CRYPT_PKEY_SLH_DSA, g_defEalSignSlhDsa, CRYPT_EAL_DEFAULT_ATTR},
+    {CRYPT_PKEY_LMS, g_defEalSignLms, CRYPT_EAL_DEFAULT_ATTR},
+    {CRYPT_PKEY_HSS, g_defEalSignHss, CRYPT_EAL_DEFAULT_ATTR},
     {CRYPT_PKEY_ML_DSA, g_defEalSignMlDsa, CRYPT_EAL_DEFAULT_ATTR},
     CRYPT_EAL_ALGINFO_END
 };

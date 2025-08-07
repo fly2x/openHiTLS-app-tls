@@ -373,6 +373,47 @@ typedef struct {
 } CRYPT_XmssPrv;
 
 /**
+ * @brief LMS public key structure
+ */
+typedef struct {
+    uint32_t algId;     /* LMS algorithm ID */
+    uint32_t otsAlgId;  /* LM-OTS algorithm ID */
+    uint8_t *pubKey;    /* Public key bytes */
+    uint32_t pubKeyLen; /* Public key length */
+} CRYPT_LmsPub;
+
+/**
+ * @brief LMS private key structure
+ */
+typedef struct {
+    uint32_t algId;     /* LMS algorithm ID */
+    uint32_t otsAlgId;  /* LM-OTS algorithm ID */
+    uint8_t *prvKey;    /* Private key bytes */
+    uint32_t prvKeyLen; /* Private key length */
+    uint32_t index;     /* Current leaf index */
+    CRYPT_LmsPub pub;   /* Public key */
+} CRYPT_LmsPrv;
+
+/**
+ * @brief HSS public key structure
+ */
+typedef struct {
+    uint32_t levels;    /* Number of HSS levels */
+    uint8_t *pubKey;    /* Public key bytes */
+    uint32_t pubKeyLen; /* Public key length */
+} CRYPT_HssPub;
+
+/**
+ * @brief HSS private key structure
+ */
+typedef struct {
+    uint32_t levels;    /* Number of HSS levels */
+    uint8_t *prvKey;    /* Private key bytes */
+    uint32_t prvKeyLen; /* Private key length */
+    CRYPT_HssPub pub;   /* Public key */
+} CRYPT_HssPrv;
+
+/**
  * @ingroup crypt_types
  *
  * ElGamal public key parameter structure
@@ -1029,6 +1070,26 @@ typedef enum {
 
     CRYPT_XMSS_ALG_ID_MAX,
 } CRYPT_XMSS_AlgId;
+
+/**
+ * @ingroup crypt_types
+ *
+ * LMS algorithm ID based on RFC 8554
+ */
+typedef enum {
+    /* LM-OTS Parameters */
+    CRYPT_LMOTS_SHA256_N32_W1 = 0x00000001,
+    CRYPT_LMOTS_SHA256_N32_W2 = 0x00000002,
+    CRYPT_LMOTS_SHA256_N32_W4 = 0x00000003,
+    CRYPT_LMOTS_SHA256_N32_W8 = 0x00000004,
+    /* LMS Parameters */
+    CRYPT_LMS_SHA256_M32_H5  = 0x00000005,
+    CRYPT_LMS_SHA256_M32_H10 = 0x00000006,
+    CRYPT_LMS_SHA256_M32_H15 = 0x00000007,
+    CRYPT_LMS_SHA256_M32_H20 = 0x00000008,
+    CRYPT_LMS_SHA256_M32_H25 = 0x00000009,
+    CRYPT_LMS_ALG_ID_MAX,
+} CRYPT_LMS_AlgId;
 
 #ifdef __cplusplus
 }

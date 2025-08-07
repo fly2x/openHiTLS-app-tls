@@ -51,6 +51,8 @@ typedef struct {
 		CRYPT_MlDsaPub mldsaPub;  /**< MLDSA public key structure */
         CRYPT_SlhDsaPub slhDsaPub; /**< SLH-DSA public key structure */
         CRYPT_XmssPub xmssPub; /**< XMSS public key structure */
+        CRYPT_LmsPub lmsPub; /**< LMS public key structure */
+        CRYPT_HssPub hssPub; /**< HSS public key structure */
     } key;                           /**< Public key union of all algorithms */
 } CRYPT_EAL_PkeyPub;
 
@@ -79,6 +81,8 @@ typedef struct {
 		CRYPT_MlDsaPrv mldsaPrv;  /**< MLDSA private key structure */
         CRYPT_SlhDsaPrv slhDsaPrv; /**< SLH-DSA private key structure */
         CRYPT_XmssPrv xmssPrv; /**< XMSS private key structure */
+        CRYPT_LmsPrv lmsPrv; /**< LMS private key structure */
+        CRYPT_HssPrv hssPrv; /**< HSS private key structure */
     } key;                           /**<Private key union of all algorithms */
 } CRYPT_EAL_PkeyPrv;
 
