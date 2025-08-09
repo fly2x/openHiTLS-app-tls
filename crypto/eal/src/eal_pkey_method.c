@@ -62,6 +62,9 @@
 #ifdef HITLS_CRYPTO_XMSS
 #include "crypt_xmss.h"
 #endif
+#ifdef HITLS_CRYPTO_LMS_HSS
+#include "crypt_lms_hss.h"
+#endif
 #include "bsl_err_internal.h"
 #include "crypt_types.h"
 #include "crypt_errno.h"
@@ -596,6 +599,37 @@ static const EAL_PkeyMethod METHODS[] = {
         CRYPT_XMSS_Sign,
         NULL,
         CRYPT_XMSS_Verify,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL
+    ),
+#endif
+#ifdef HITLS_CRYPTO_LMS_HSS
+    EAL_PKEY_METHOD_DEFINE(
+        CRYPT_PKEY_LMS_HSS,
+        CRYPT_LMS_HSS_NewCtx,
+        NULL, // dupCtx
+        CRYPT_LMS_HSS_FreeCtx,
+        NULL, // setPara
+        NULL, // getPara
+        CRYPT_LMS_HSS_Gen,
+        CRYPT_LMS_HSS_Ctrl,
+        CRYPT_LMS_HSS_SetPubKey,
+        CRYPT_LMS_HSS_SetPrvKey,
+        CRYPT_LMS_HSS_GetPubKey,
+        CRYPT_LMS_HSS_GetPrvKey,
+        CRYPT_LMS_HSS_Sign,
+        NULL,
+        CRYPT_LMS_HSS_Verify,
         NULL,
         NULL,
         NULL,

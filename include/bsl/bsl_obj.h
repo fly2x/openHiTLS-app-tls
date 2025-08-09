@@ -552,6 +552,7 @@ typedef enum {
     BSL_CID_ELGAMAL = 5204,
     BSL_CID_SLH_DSA = 5205,         /**< Identifies SLH-DSA algorithm */
     BSL_CID_XMSS = 5206,
+    BSL_CID_LMS_HSS = 5207,         /**< Identifies LMS/HSS algorithm */
 
     BSL_CID_MAC_AEAD = 5300,
 

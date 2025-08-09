@@ -128,6 +128,9 @@ static const CRYPT_EAL_AlgInfo g_defEalSigns[] = {
     {CRYPT_PKEY_SM2, g_defEalSignSm2, CRYPT_EAL_DEFAULT_ATTR},
     {CRYPT_PKEY_SLH_DSA, g_defEalSignSlhDsa, CRYPT_EAL_DEFAULT_ATTR},
     {CRYPT_PKEY_ML_DSA, g_defEalSignMlDsa, CRYPT_EAL_DEFAULT_ATTR},
+#ifdef HITLS_CRYPTO_LMS_HSS
+    {CRYPT_PKEY_LMS_HSS, g_defEalSignLmsHss, CRYPT_EAL_DEFAULT_ATTR},
+#endif
     CRYPT_EAL_ALGINFO_END
 };
 

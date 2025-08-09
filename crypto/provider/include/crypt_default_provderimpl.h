@@ -102,6 +102,9 @@ extern const CRYPT_EAL_Func g_defEalSignEcdsa[];
 extern const CRYPT_EAL_Func g_defEalSignSm2[];
 extern const CRYPT_EAL_Func g_defEalSignMlDsa[];
 extern const CRYPT_EAL_Func g_defEalSignSlhDsa[];
+#ifdef HITLS_CRYPTO_LMS_HSS
+extern const CRYPT_EAL_Func g_defEalSignLmsHss[];
+#endif
 
 extern const CRYPT_EAL_Func g_defEalMlKem[];
 extern const CRYPT_EAL_Func g_defEalHybridKeyKem[];
